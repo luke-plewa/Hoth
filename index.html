@@ -1,0 +1,69 @@
+<html>
+<body style="background: #000000;">
+<head>
+<title>
+Luke Plewa's STAR WARS: Battle for Hoth
+</title>
+</head>
+
+<font color="Blue" face="Arial">
+<p align=center>
+	A long time ago in a galaxy far, <br>far away...
+</p>
+</font>
+<font color="Yellow" face="Arial">
+<h1 align=center>
+	STAR WARS: Battle for Hoth by Luke Plewa
+</h1>
+<p align=center>
+	It is a dark time for the Rebellion. Although the Death Star has been destroyed,
+	Imperial troops have driven the Rebel forces from their hidden base and pursued
+	them across the galaxy.<br>
+	Evading the dreaded Imperial Starfleet, a group of freedom fighters led by Luke Skywalker has established a new secret base on the remote ice world of Hoth.<br><br>
+	The Rebel Alliance base on Hoth is under attack! Defend your friends and allies
+	as they escape the planet. Tie Fighters will come rushing in and it's
+	your job, as the pilot of a Snowspeeder, to destroy as many as you can!
+</p>
+
+<br>
+<p align=center>
+<img src="screen1.png" height="50%" width ="50%">
+</p>
+<p align=center> Game Interface </p>
+<hr>
+
+<p>
+	<h2>Features:</h2>
+	<li>Collision Detection: laser collides with cubes and Tie Fighters.
+		Snowspeeder collides with walls and floor.</li>
+	<br><li>Explosion Modeling: The cubes and Tie Fighters have explosion animations.</li>
+	<br><li>Controls: Keys: 'f' to fire laser. 'g' to start ship movement. 'h' to reset game. Mouse to aim/steer.</li>
+	<br><li>Texure Mapping: The ground is mapped with mipmaps to model snow, ice, and water.
+		The Cubes are texture mapped with an Imperial symbol.</li>
+	<br><li>Score System: a score is incremented after every successful laser hit.</li><hr>
+</p>
+
+<p align=center>
+	<h2 align=center>Models:</h2> <p align=center> The Tie Fighter, Cubes, and Walls are all hierarchically modeled.
+		The Speeder is from TurboSquid.com.<br></p>
+		<p align=center><img src="tie.png" height="35%" width ="35%">
+		<img src="speeder.png" height="35%" width ="35%"><br>
+		<p align=center><img src="cubes.png" height="35%" width ="35%">
+		<img src="wall.png" height="35%" width ="35%"><br><hr>
+</p>
+
+<p align=center>
+	<h2 align=center>Explosion Animations:</h2> <p align=center> The Tie Fighters and Cubes have animated explosions. This is done in the vertex shader. The first step is to send the vertices along a vector. In this case I use the normal vector, but any vector will do. I also use a random scalar so that vertices which share the same normal or similar normal vectors don't have uniform motion. In order to add another element of chaos, the vertices are next multiplied by a rotation matrix. The angle of rotation is on a timer starting from the moment of collision. The last step is to decrement the y-values of the vertices to represent gravity.<br></p>
+		<p align=center><img src="explode_tie.png" height="35%" width ="35%">
+		<img src="cube_explode.png" height="35%" width ="35%"><hr></p>
+</p>
+
+<h2 align=center> References:</h2>
+<p align=center>
+	<a href="http://renderingwonders.wordpress.com/2011/02/07/chapter-11-%E2%80%93-advanced-shader-usage-geometry-shaders/">
+	Chapter 11 :: Advanced Shader Usage :: Geometry Shaders by Rendering Wonders</a><br>
+</p>
+
+</font>
+</body>
+</html>

@@ -1,0 +1,14 @@
+    Meshes[0] = GeometryCreator::CreateCube();
+    Meshes[1]= GeometryCreator::CreateCube(vec3(0.5f, 2.f, 4.f));
+    Meshes[2] = GeometryCreator::CreateCylinder(1.f, 1.f, 1.5f, 8, 8);
+    Meshes[3] = GeometryCreator::CreateCylinder(1.5f, 0.5f, 2.0f, 16, 5);
+    Meshes[4] = GeometryCreator::CreateCylinder(0.8f, 0.f, 1.75f, 32, 1);
+    Meshes[5] = GeometryCreator::CreateDisc(0.5f, 1.5f, 1.75f, 32, 3);
+    Meshes[6] = GeometryCreator::CreateDisc(0.1f, 1.f, 0.f, 8, 0);
+    Meshes[7] = GeometryCreator::CreateSphere(glm::vec3(1.5f));
+    Meshes[8] = GeometryCreator::CreateSphere(glm::vec3(1.5f, 2.5f, 0.5f), 128, 32);
+    Meshes[9] = GeometryCreator::CreateSphere(glm::vec3(2.0f), 4, 2);
+    Meshes[10] = GeometryCreator::CreateSphere(glm::vec3(2.0f), 6, 3);
+    Meshes[11] = GeometryCreator::CreateTorus(1.f, 2.f, 12, 24);
+    Meshes[12] = GeometryCreator::CreateTorus(0.5f, 2.5f, 8, 12);
+    Meshes[13] = GeometryCreator::CreateTorus(2.f, 2.5f, 48, 64);
