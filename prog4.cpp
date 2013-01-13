@@ -146,6 +146,9 @@ void SetView() {
   glm::mat4 view = glm::lookAt(eye, look, up);
   safe_glUniformMatrix4fv(h_uViewMatrix, glm::value_ptr(view));
   glUniform4f(h_uView, eye.x, eye.y, eye.z, 0);
+  light_x = eye.x;
+  light_y = eye.y;
+  light_z = eye.z;
   glUniform3f(h_uLight, light_x, light_y, light_z);
 }
 
@@ -298,6 +301,7 @@ int InstallShader(const GLchar *vShaderName, const GLchar *fShaderName) {
       h_options = safe_glGetUniformLocation(ShadeProg, "options");
     uNormalMatrix   = safe_glGetUniformLocation(ShadeProg, "uNormalMatrix");
     h_uLaser   = safe_glGetUniformLocation(ShadeProg, "uLaser");
+    h_aColor   = safe_glGetUniformLocation(ShadeProg, "aColor");
        printf("sucessfully installed shader %d\n", ShadeProg);
        return 1;
 
@@ -525,8 +529,8 @@ void Draw (void)
       manipulate = true;
       if(collides[i+40] == false){ // new animation
         myExplode[i+40] = 0.0f;
-        count++;
-        printf("Count: %d\n", count);
+        //count++;
+        //printf("Count: %d\n", count);
       } //start animation
       collides[i+40] = true;
       glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
@@ -580,8 +584,8 @@ void Draw (void)
       manipulate = true;
       if(collides[(i/2)+40] == false){
         myExplode[(i/2)+40] = 0.0f;
-        count++;
-        printf("Count: %d\n", count);
+        //count++;
+        //printf("Count: %d\n", count);
       }
       collides[(i/2)+40] = true;
       glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
@@ -700,8 +704,8 @@ void Draw (void)
         manipulate = true;
         if(collides[i] == false){ // got a new hit, start animations
           myExplode[i] = 0.0f;
-          count++;
-          printf("Count: %d\n", count);
+          //count++;
+          //printf("Count: %d\n", count);
           //glUniform3f(h_uLaser, laserLook.x+laserMove.x, laserLook.y+laserMove.y, laserLook.z+laserMove.z);
         }
         collides[i] = true;
