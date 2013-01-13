@@ -80,8 +80,7 @@ int myMoveDec = false; // direction of mymove
 int collides[80]; // collision detection on models
 int count = 0; // hit count
 
-static const int TieCount = 12; // must be less than 20
-static const int CubeCount = 15; // must be less than 20
+int TieCount = 0; // must be less than 20
 
 static const float g_maxZ = 50.0f;   // game boundaries
 static const float g_minZ = -50.0f;
@@ -121,6 +120,7 @@ float light_z = 50;
 float myRot = 0.0f;
 float shapeRot = -70.0f; //ship yaw
 float shipRot = 0.0f; //ship pitch
+float dt = 0.0; //time per frame
 
 //obj loader
 int vertexCount;
@@ -134,6 +134,29 @@ static const float RADS_TO_DEGS = 180.0 / 4*atan((float)1.0); // Pi=3.14
 
 static const float g_groundY = -1.51;      // y coordinate of the ground
 static const float g_groundSize = 600.0;   // half the ground length
+
+class TieFighter{
+  vec3 position;
+  vec3 direction;
+  float speed;
+  int num;
+
+  public:
+    void create(int n){
+      position = vec3((float) rand() / ((float) RAND_MAX) * 80 - 40, 1.0, (float) rand() / ((float) RAND_MAX) * 80 - 40);
+      direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
+      speed = (float) rand() / ((float) RAND_MAX) + 2;
+      num = n;
+    }
+    void collide(){
+      // gets ran if collided into
+      direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) - 0.5);
+    }
+    void update();
+    void draw(Mesh *m);
+};
+
+std::vector<TieFighter> ties;
 
 /* projection matrix */
 void SetProjectionMatrix() {
@@ -156,6 +179,49 @@ void SetView() {
 void SetModel() {
   safe_glUniformMatrix4fv(h_uModelMatrix, glm::value_ptr(ModelTrans.modelViewMatrix));
   safe_glUniformMatrix4fv(uNormalMatrix, glm::value_ptr(glm::transpose(glm::inverse(ModelTrans.modelViewMatrix))));
+}
+
+void TieFighter::draw(Mesh *m){
+  ModelTrans.pushMatrix();
+    glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
+    ModelTrans.translate(vec3(position.x, position.y, position.z));
+    SetModel();  
+    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+  ModelTrans.popMatrix();
+}
+
+void TieFighter::update(){
+  // move along direction by speed
+  // check for collisions
+  position += direction*speed*dt;
+  for(int i = 0; i < TieCount; i++){
+    float temp_x = position.x - ties[i].position.x;
+    float temp_z = position.z - ties[i].position.z;
+    if(i != num && temp_x < 0.1 && temp_z < 0.1){
+      collide();
+    }
+    /*vec3 diff = ties[i].position - laserMove;
+    if(diff.x < 1 && diff.z < 1){
+      collide();
+    }*/
+  }
+  if(position.x > 10){
+    position.x = 10;
+    collide();
+  }
+  else if(position.x < -10){
+    position.x = -10;
+    collide();
+  }
+
+  if(position.z > 10){
+    position.z = 10;
+    collide();
+  }
+  else if(position.z < -10){
+    position.z = -10;
+    collide();
+  }
 }
 
 static void initGround() {
@@ -339,12 +405,24 @@ void Initialize ()                  // Any GL Init Code
     // If you make IBO NULL, then the vertices will not be de-duped (you can use
     // the simpler glDrawArrays, but it will probably be more video memory).
     //vertexCount = model.meshes()[0].makeVBO(NULL, &positions, &uvs, &normals);
+
+
+      // tie fighter
+    TieFighter tie_list[10];
+    for(int i = 0; i < 10; i++){
+      tie_list[i].create(i);
+      ties.push_back(tie_list[i]);
+    }
+
+    TieCount += 3;
 }
 
 /* Main display function */
 void Draw (void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // take initial time
 
   if (cube == 0) {
     //Start our shader
@@ -356,36 +434,6 @@ void Draw (void)
 
     ModelTrans.loadIdentity();
     SetModel();
-
-    manipulate = false;
-    glUniform3f(h_options, fire, myExplode[0], manipulate);
-    glUniform3f(h_aColor, 0.3f, 0.3f, 0.3f);
-
-    //obj (speeder)
-    glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, positions);
-    glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, normals);
-    glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    ModelTrans.pushMatrix();
-    ModelTrans.translate(vec3(look.x, look.y-0.3f, look.z));
-    ModelTrans.scale(0.002f);
-    ModelTrans.rotate(shapeRot, vec3(0, 1, 0));
-    ModelTrans.rotate(shipRot, vec3(1, 0, 0));
-    SetModel();
-
-    // If you used the IBO (generally a good idea):
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    // else:
-    //glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-    ModelTrans.popMatrix();
-
-    safe_glDisableVertexAttribArray(h_aNormal);
-    safe_glDisableVertexAttribArray(h_aPosition);
 
   //laser
   if(fire){
@@ -414,88 +462,12 @@ void Draw (void)
     glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
 
     ModelTrans.popMatrix();
-  
 
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
   }
 
-    //walls
-    //base
-    Mesh* m = GeometryCreator::CreateCylinder(1.5f, 0.5f, 2.0f, 16, 5);
-
-    safe_glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
-    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    safe_glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, m->NormalHandle);
-    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
-
-    glUniform3f(h_aColor, 0.35f, 0.35f, 0.35f);
-
-    float tran_x = 0.0f;
-    float tran_z = g_maxZ;
-    for(int i = 0; i < 30; i++){
-      ModelTrans.pushMatrix();
-        ModelTrans.translate(vec3(tran_x, -1.0f, tran_z));
-        ModelTrans.scale(4.0f);
-        ModelTrans.rotate(-90.0f, vec3(1, 0, 0));
-        SetModel();
-        tran_x += 25.0f;
-        if(i == 15){
-          tran_x = 0.0f;
-          tran_z = g_minZ;
-        }
-    
-      glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-
-      ModelTrans.popMatrix();
-    }
-
-    safe_glDisableVertexAttribArray(h_aPosition);
-    safe_glDisableVertexAttribArray(h_aNormal);
-
-    //wall
-    m = GeometryCreator::CreateCube(vec3(0.5f, 2.f, 4.f));
-
-    safe_glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
-    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    safe_glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, m->NormalHandle);
-    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
-
-    glUniform3f(h_aColor, 0.35f, 0.35f, 0.35f);
-
-    tran_x = 0.0f;
-    tran_z = g_maxZ;
-    for(int i = 0; i < 30; i++){
-      ModelTrans.pushMatrix();
-        ModelTrans.translate(vec3(tran_x, 6.0f, tran_z));
-        ModelTrans.scale(7.0f);
-        ModelTrans.rotate(-90.0f, vec3(0, 1, 0));
-        SetModel();
-        tran_x += 25.0f;
-        if(i == 15){
-          tran_x = 0.0f;
-          tran_z = g_minZ;
-        }
-      glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-
-      ModelTrans.popMatrix();
-    }
-
-    safe_glDisableVertexAttribArray(h_aPosition);
-    safe_glDisableVertexAttribArray(h_aNormal);
-
-    // tie fighter
-    m = GeometryCreator::CreateSphere(glm::vec3(1.5f));
+    Mesh* m = GeometryCreator::CreateSphere(glm::vec3(1.5f));
     safe_glEnableVertexAttribArray(h_aPosition);
     glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
     safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -504,127 +476,14 @@ void Draw (void)
     safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
     glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
-    tran_x = 70.0f;
-    float tran_y = 15.0f;
-    tran_z = 15.0f;
-    tran_x -= myRot * 0.1f; //fly patterns
-    float delta_z = myMove*0.1f;
-    if(delta_z < 5.0f && !myMoveDec){ // dont move
-      delta_z = -5.0f;
+    for(int i=0; i < TieCount; i++){
+      //linked list of ties, draw draw(m)
+      ties[i].update();
+      ties[i].draw(m);
     }
-    else if(delta_z > -5.0f && myMoveDec){
-      delta_z = 0.0f;
-    }
-    if(delta_z >= 5.0f && !myMoveDec){ // start to move
-      delta_z -= 10.0f;
-    }
-    else if(delta_z <= -5.0f && myMoveDec){
-      delta_z += 5.0f;
-    }
-  for(int i = 0; i < TieCount; i++){
-    ModelTrans.pushMatrix();
-    if(laserMove.y <= 18.5f && laserMove.y >= 12.0f
-      && laserMove.x <= tran_x + 2.0f && laserMove.x >= tran_x - 2.0f
-      && laserMove.z <= tran_z+delta_z + 2.0f && laserMove.z >= tran_z+delta_z - 2.0f){ //did laser hit it?
-      manipulate = true;
-      if(collides[i+40] == false){ // new animation
-        myExplode[i+40] = 0.0f;
-        //count++;
-        //printf("Count: %d\n", count);
-      } //start animation
-      collides[i+40] = true;
-      glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
-    }
-    if(myExplode[i+40] >= 359.0f){ collides[i+40] = false; //reset
-      glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
-    }
-    if(collides[i+40]){ manipulate = true; // was hit
-      glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
-      tran_y -= 0.2f * myExplode[i+40];
-    }
-    glUniform3f(h_options, fire, myExplode[i+40], manipulate);
-    ModelTrans.translate(vec3(tran_x, tran_y, tran_z+delta_z));
-    ModelTrans.scale(1.05f);
-    SetModel();  
-    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-    ModelTrans.popMatrix();
-    tran_y = 15.0f;
-    manipulate = false;
-    glUniform3f(h_options, fire, myExplode[i+40], manipulate);
-    glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
-    if(i % 2 == 0){
-      tran_x += 30.0f;
-      tran_z = 15.0f;
-    }
-    else{
-      tran_z -= 30.0f;
-      tran_x += 10.0f;
-    }
-  }
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    m = GeometryCreator::CreateDisc(0.1f, 1.f, 0.f, 8, 0);
-    safe_glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
-    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    safe_glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, m->NormalHandle);
-    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
-    tran_x = 70.0f;
-    tran_y = 15.0f;
-    tran_z = 15.0f;
-    tran_x -= myRot * 0.1f; // fly
-  for(int i = 0; i < TieCount*2; i++){
-    ModelTrans.pushMatrix();
-    if(laserMove.y <= 18.5f && laserMove.y >= 12.0f
-      && laserMove.x <= tran_x + 2.0f && laserMove.x >= tran_x - 2.0f
-      && laserMove.z <= tran_z+delta_z + 2.0f && laserMove.z >= tran_z+delta_z - 2.0f){ //did laser hit it?
-      manipulate = true;
-      if(collides[(i/2)+40] == false){
-        myExplode[(i/2)+40] = 0.0f;
-        //count++;
-        //printf("Count: %d\n", count);
-      }
-      collides[(i/2)+40] = true;
-      glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
-    }
-    if(myExplode[(i/2)+40] >= 359.0f){ collides[(i/2)+40] = false;
-      glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
-    }
-    if(collides[(i/2)+40]){ manipulate = true;
-      glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
-      tran_y -= 0.2f * myExplode[(i/2)+40]; 
-    }
-    glUniform3f(h_options, fire, myExplode[(i/2)+40], manipulate);
-    ModelTrans.translate(vec3(tran_x, tran_y, tran_z+delta_z));
-    ModelTrans.scale(3.0f);
-    if(i % 2 == 0){ ModelTrans.rotate(myMove*0.5f, vec3(0, 1, 0));
-      ModelTrans.translate(vec3(0, 0, 0.5f)); }
-    else { ModelTrans.rotate(myMove*0.5f, vec3(0, 1, 0));
-      ModelTrans.translate(vec3(0, 0, -0.5f)); }
-    SetModel();  
-    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-    ModelTrans.popMatrix();
-    tran_y = 15.0f;
-    manipulate = false;
-    glUniform3f(h_options, fire, myExplode[(i/2)+40], manipulate);
-    glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
-    if((i-1) % 4 == 0){
-      tran_x += 30.0f;
-      tran_z = 15.0f;
-    }
-    else if ((i-1) % 2 == 0){
-      tran_z -= 30.0f;
-      tran_x += 10.0f;
-    }
-  }
-    safe_glDisableVertexAttribArray(h_aPosition);
-    safe_glDisableVertexAttribArray(h_aNormal);
-    safe_glDisableVertexAttribArray(h_aTexCoord);
-
-    //end tie fighters
 
     //set up the texture unit
     glEnable(GL_TEXTURE_2D);
@@ -653,98 +512,15 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aTexCoord);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    //dancing cubes
-    m = GeometryCreator::CreateCube();
-
-    safe_glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
-    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    safe_glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, m->NormalHandle);
-    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindTexture(GL_TEXTURE_2D, 2);
-    safe_glEnableVertexAttribArray(h_aTexCoord);
-    glBindBuffer(GL_ARRAY_BUFFER, TexBuffObj);
-    safe_glVertexAttribPointer(h_aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
-
-    tran_x = 40.0f;
-    tran_z = 10.0f;
-    for(int i = 0; i < CubeCount*2; i++){
-      ModelTrans.pushMatrix();
-      tran_y = 1.0f;
-      if (i % 2 == 0.0f){
-        if(laserMove.y <= 8.5f && laserMove.y >= -1.5f
-          && laserMove.x <= tran_x + 2.51f && laserMove.x >= tran_x - 2.51f
-          && laserMove.z <= tran_z + 2.51f && laserMove.z >= tran_z - 2.51f){ //did laser hit it?
-          manipulate = true;
-          if(collides[i] == false){ // start animations
-            myExplode[i] = 0.0f;
-            //glUniform3f(h_uLaser, laserLook.x+laserMove.x, laserLook.y+laserMove.y, laserLook.z+laserMove.z);
-          }
-          collides[i] = true;
-        }
-        if(myExplode[i] >= 359.0f){ collides[i] = false; }
-        if(collides[i]){ manipulate = true;
-          tran_y -= 0.1f * myExplode[i];  }
-        glUniform3f(h_options, fire, myExplode[i], manipulate);
-
-        ModelTrans.translate(vec3(tran_x, tran_y, tran_z));
-        ModelTrans.scale(5.0f);
-      }
-      else{
-        tran_y = 6.0f;
-
-      if(laserMove.y <= 8.5f && laserMove.y >= -1.5f
-        && laserMove.x <= tran_x + 2.51f && laserMove.x >= tran_x - 2.51f
-        && laserMove.z <= tran_z + 2.51f && laserMove.z >= tran_z - 2.51f){ //did laser hit it?
-        manipulate = true;
-        if(collides[i] == false){ // got a new hit, start animations
-          myExplode[i] = 0.0f;
-          //count++;
-          //printf("Count: %d\n", count);
-          //glUniform3f(h_uLaser, laserLook.x+laserMove.x, laserLook.y+laserMove.y, laserLook.z+laserMove.z);
-        }
-        collides[i] = true;
-      }
-      if(myExplode[i] >= 359.0f){ collides[i] = false; }
-      if(collides[i]){ manipulate = true;
-      tran_y -= 0.1f * myExplode[i];  }
-      glUniform3f(h_options, fire, myExplode[i], manipulate);
-
-        ModelTrans.translate(vec3(tran_x, tran_y, tran_z));
-        ModelTrans.scale(5.0f);
-        if(!collides[i]){ ModelTrans.rotate(myRot, vec3(0, 1, 0)); }
-        else { ModelTrans.rotate(myExplode[i]*-0.7f+myRot, vec3(0, 1, 0)); } // dancing part
-
-        tran_z -= 10.0f;
-        if (i % 3 == 0.0f){
-          tran_z = 10.0f;
-          tran_x += 60.0f;
-        }
-      }
-
-      SetModel();
-    
-      glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-
-      ModelTrans.popMatrix();
-    manipulate = false;
-    glUniform3f(h_options, fire, myExplode[0], manipulate);
-    }
-
-    safe_glDisableVertexAttribArray(h_aPosition);
-    safe_glDisableVertexAttribArray(h_aNormal);
-    safe_glDisableVertexAttribArray(h_aTexCoord);
-
     //Disable the shader
     glUseProgram(0);
     glDisable(GL_TEXTURE_2D);
   } 
     glutSwapBuffers();
+
+    //take end time
+    //set dt
+    dt = 0.1;
 
 }
 
