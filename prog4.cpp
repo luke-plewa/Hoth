@@ -1,6 +1,3 @@
-//for CSC 471 - texture mapping lab
-//ZJ WOOD
-
 #ifdef __APPLE__
 #include "GLUT/glut.h"
 #include <OPENGL/gl.h>
@@ -84,6 +81,7 @@ int TieCount = 0; // must be less than 20
 
 static const float g_maxZ = 50.0f;   // game boundaries
 static const float g_minZ = -50.0f;
+static const float BOX_SIZE = 50.0f;
 
 //Handles to the shader data
 GLint h_uLight;
@@ -143,7 +141,7 @@ class TieFighter{
 
   public:
     void create(int n){
-      position = vec3((float) rand() / ((float) RAND_MAX) * 80 - 40, 1.0, (float) rand() / ((float) RAND_MAX) * 80 - 40);
+      position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 1.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
       direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
       speed = (float) rand() / ((float) RAND_MAX) + 2;
       num = n;
@@ -195,9 +193,9 @@ void TieFighter::update(){
   // check for collisions
   position += direction*speed*dt;
   for(int i = 0; i < TieCount; i++){
-    float temp_x = position.x - ties[i].position.x;
-    float temp_z = position.z - ties[i].position.z;
-    if(i != num && temp_x < 0.1 && temp_z < 0.1){
+    float temp_x = abs(position.x - ties[i].position.x);
+    float temp_z = abs(position.z - ties[i].position.z);
+    if(i != num && temp_x < 2 && temp_z < 2){
       collide();
     }
     /*vec3 diff = ties[i].position - laserMove;
@@ -205,21 +203,21 @@ void TieFighter::update(){
       collide();
     }*/
   }
-  if(position.x > 10){
-    position.x = 10;
+  if(position.x > BOX_SIZE){
+    position.x = BOX_SIZE;
     collide();
   }
-  else if(position.x < -10){
-    position.x = -10;
+  else if(position.x < -BOX_SIZE){
+    position.x = -BOX_SIZE;
     collide();
   }
 
-  if(position.z > 10){
-    position.z = 10;
+  if(position.z > BOX_SIZE){
+    position.z = BOX_SIZE;
     collide();
   }
-  else if(position.z < -10){
-    position.z = -10;
+  else if(position.z < -BOX_SIZE){
+    position.z = -BOX_SIZE;
     collide();
   }
 }
@@ -413,8 +411,6 @@ void Initialize ()                  // Any GL Init Code
       tie_list[i].create(i);
       ties.push_back(tie_list[i]);
     }
-
-    TieCount += 3;
 }
 
 /* Main display function */
@@ -663,22 +659,9 @@ void ReshapeGL (int width, int height)
 void Timer(int param)
 {
     myRot += StepSize * 0.1f;
-    if (myRot >= 2080.0f){ // handles cube rotation and tie fighter cycling
+    if (myRot >= 360.0f){ // handles cube rotation and tie fighter cycling
       myRot = 0.0f;
-    }
-    if (myMove >= 100.0f){
-      myMoveDec = true;
-    }
-    if (myMove <= -100.0f){
-      myMoveDec = false;
-    }
-    if(!myMoveDec){ myMove += StepSize * 0.2f; }
-    else { myMove -= StepSize * 0.2f; }
-    for(int i = 0; i < 80; i++){
-      myExplode[i] += StepSize * 0.1f;
-      if (myExplode[i] >= 360.0f){
-        myExplode[i] = 0.0f;
-      }
+      TieCount++;
     }
     if(move){
       gaze = look - eye;
