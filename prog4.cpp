@@ -1,6 +1,7 @@
 #ifdef __APPLE__
 #include "GLUT/glut.h"
 #include <OPENGL/gl.h>
+#include <OpenGL/glu.h>
 #endif
 #ifdef __unix__
 #include <GL/glut.h>
@@ -81,7 +82,7 @@ int TieCount = 0; // must be less than 20
 
 static const float g_maxZ = 50.0f;   // game boundaries
 static const float g_minZ = -50.0f;
-static const float BOX_SIZE = 50.0f;
+static const float BOX_SIZE = 25.0f;
 
 //Handles to the shader data
 GLint h_uLight;
@@ -195,7 +196,7 @@ void TieFighter::update(){
   for(int i = 0; i < TieCount; i++){
     float temp_x = abs(position.x - ties[i].position.x);
     float temp_z = abs(position.z - ties[i].position.z);
-    if(i != num && temp_x < 2 && temp_z < 2){
+    if(i != num && temp_x < 2.5f && temp_z < 2.5f){
       collide();
     }
     /*vec3 diff = ties[i].position - laserMove;
@@ -661,7 +662,9 @@ void Timer(int param)
     myRot += StepSize * 0.1f;
     if (myRot >= 360.0f){ // handles cube rotation and tie fighter cycling
       myRot = 0.0f;
-      TieCount++;
+      if(TieCount < 10){
+        TieCount++;
+      }
     }
     if(move){
       gaze = look - eye;
