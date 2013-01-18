@@ -41,7 +41,7 @@ void main() {
   vec3 newNorm = normalize(vNormal);
 
   float dotProd = dot(newNorm, L);
-  if(dotProd > 0.7){
+  /*if(dotProd > 0.7){
     dotProd = 0.8;
   }
   else if(dotProd > 0.4){
@@ -49,7 +49,7 @@ void main() {
   }
   else{
     dotProd = 0.2;
-  }
+  }*/
   dotProd = max(dotProd, 0.0);
   float dotProd_r = uLightCol.x*dotProd;
   float dotProd_g = uLightCol.y*dotProd;

@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <vector>
 #include <fstream>
+#include <time.h>
 
 using namespace std;
 using namespace glm;
@@ -68,7 +69,7 @@ float alpha, beta;
 
 //game stats
 int fire = false; // laser active
-vec3 laserMove = vec3(0, 0, 0); // laser position
+vec3 laserMove = vec3(0, -20, 0); // laser position
 float laserProgress = 0.0f; // step factor
 vec3 laserLook = vec3(0, 0, 0); // look vector of laser
 vec3 laserStart = vec3(0, 0, 0); // where the eye was
@@ -119,7 +120,6 @@ float light_z = 50;
 float myRot = 0.0f;
 float shapeRot = -70.0f; //ship yaw
 float shipRot = 0.0f; //ship pitch
-float dt = 0.0; //time per frame
 
 //obj loader
 int vertexCount;
@@ -134,24 +134,35 @@ static const float RADS_TO_DEGS = 180.0 / 4*atan((float)1.0); // Pi=3.14
 static const float g_groundY = -1.51;      // y coordinate of the ground
 static const float g_groundSize = 600.0;   // half the ground length
 
+time_t delta_start, delta_end;
+
 class TieFighter{
   vec3 position;
   vec3 direction;
+  vec3 color;
   float speed;
   int num;
 
   public:
     void create(int n){
-      position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 1.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
+      position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 0.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
       direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
       speed = (float) rand() / ((float) RAND_MAX) + 2;
       num = n;
+      color = vec3(0.7, 0.3, 0.3);
     }
-    void collide(){
+    void collide(bool playerHit){
       // gets ran if collided into
-      direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) - 0.5);
+      if(!playerHit){
+        direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) - 0.5);
+        color = vec3((float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX));
+      }
+      else{
+        direction = vec3(0, 0, 0);
+        color = vec3(.01f, .01f, .01f);
+      }
     }
-    void update();
+    void update(time_t deltaTicks);
     void draw(Mesh *m);
 };
 
@@ -168,9 +179,9 @@ void SetView() {
   glm::mat4 view = glm::lookAt(eye, look, up);
   safe_glUniformMatrix4fv(h_uViewMatrix, glm::value_ptr(view));
   glUniform4f(h_uView, eye.x, eye.y, eye.z, 0);
-  light_x = eye.x;
-  light_y = eye.y;
-  light_z = eye.z;
+  //light_x = eye.x;
+  //light_y = eye.y;
+  //light_z = eye.z;
   glUniform3f(h_uLight, light_x, light_y, light_z);
 }
 
@@ -182,44 +193,44 @@ void SetModel() {
 
 void TieFighter::draw(Mesh *m){
   ModelTrans.pushMatrix();
-    glUniform3f(h_aColor, 0.7f, 0.3f, 0.3f);
+    glUniform3f(h_aColor, color.x, color.y, color.z);
     ModelTrans.translate(vec3(position.x, position.y, position.z));
     SetModel();  
     glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
   ModelTrans.popMatrix();
 }
 
-void TieFighter::update(){
+void TieFighter::update(time_t deltaTicks){
   // move along direction by speed
   // check for collisions
-  position += direction*speed*dt;
+  position += direction*speed*.1f;
   for(int i = 0; i < TieCount; i++){
     float temp_x = abs(position.x - ties[i].position.x);
     float temp_z = abs(position.z - ties[i].position.z);
     if(i != num && temp_x < 2.5f && temp_z < 2.5f){
-      collide();
+      collide(false);
     }
-    /*vec3 diff = ties[i].position - laserMove;
-    if(diff.x < 1 && diff.z < 1){
-      collide();
-    }*/
+  }
+  vec3 diff = abs(position - laserMove);
+  if(diff.x < 1.5f && diff.z < 1.5f && diff.y < 1.5f){
+    collide(true);
   }
   if(position.x > BOX_SIZE){
     position.x = BOX_SIZE;
-    collide();
+    collide(false);
   }
   else if(position.x < -BOX_SIZE){
     position.x = -BOX_SIZE;
-    collide();
+    collide(false);
   }
 
   if(position.z > BOX_SIZE){
     position.z = BOX_SIZE;
-    collide();
+    collide(false);
   }
   else if(position.z < -BOX_SIZE){
     position.z = -BOX_SIZE;
-    collide();
+    collide(false);
   }
 }
 
@@ -381,6 +392,8 @@ void Initialize ()                  // Any GL Init Code
     glClearDepth (1.0f);    // Depth Buffer Setup
     glDepthFunc (GL_LEQUAL);    // The Type Of Depth Testing
     glEnable (GL_DEPTH_TEST);// Enable Depth Testing
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     /* some matrix stack init */
     ModelTrans.useModelViewMatrix();
     ModelTrans.loadIdentity();
@@ -412,14 +425,13 @@ void Initialize ()                  // Any GL Init Code
       tie_list[i].create(i);
       ties.push_back(tie_list[i]);
     }
+    time (&delta_start);
 }
 
 /* Main display function */
 void Draw (void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // take initial time
 
   if (cube == 0) {
     //Start our shader
@@ -472,15 +484,16 @@ void Draw (void)
     glBindBuffer(GL_ARRAY_BUFFER, m->NormalHandle);
     safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->IndexHandle);
-    glUniform3f(h_aColor, 0.2f, 0.2f, 0.3f);
+    time(&delta_end);
+    time_t temp = difftime(delta_start, delta_end);
     for(int i=0; i < TieCount; i++){
       //linked list of ties, draw draw(m)
-      ties[i].update();
+      ties[i].update(temp);
       ties[i].draw(m);
     }
+    time (&delta_start);
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
-
 
     //set up the texture unit
     glEnable(GL_TEXTURE_2D);
@@ -514,11 +527,6 @@ void Draw (void)
     glDisable(GL_TEXTURE_2D);
   } 
     glutSwapBuffers();
-
-    //take end time
-    //set dt
-    dt = 0.1;
-
 }
 
 //translates mouse clicks into usable coordinates
@@ -666,6 +674,14 @@ void Timer(int param)
         TieCount++;
       }
     }
+
+    time(&delta_end);
+    time_t temp = difftime(delta_start, delta_end);
+    for(int i=0; i < TieCount; i++){
+      ties[i].update(temp);
+    }
+    time (&delta_start);
+
     if(move){
       gaze = look - eye;
       if(eye.y < 0){
@@ -702,7 +718,7 @@ int main(int argc, char** argv) {
   glutInitWindowPosition( 20, 20 );
   glutInitWindowSize(1200, 800);
   glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-  glutCreateWindow("My First texture maps");
+  glutCreateWindow("Program 1");
   
   //set up the opengl call backs
   glutDisplayFunc(Draw);
