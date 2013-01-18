@@ -83,7 +83,7 @@ int TieCount = 0; // must be less than 20
 
 static const float g_maxZ = 50.0f;   // game boundaries
 static const float g_minZ = -50.0f;
-static const float BOX_SIZE = 25.0f;
+static const float BOX_SIZE = 50.0f;
 
 //Handles to the shader data
 GLint h_uLight;
@@ -132,7 +132,7 @@ RenderingHelper ModelTrans;
 static const float RADS_TO_DEGS = 180.0 / 4*atan((float)1.0); // Pi=3.14
 
 static const float g_groundY = -1.51;      // y coordinate of the ground
-static const float g_groundSize = 600.0;   // half the ground length
+static const float g_groundSize = BOX_SIZE;   // half the ground length
 
 time_t delta_start, delta_end;
 
@@ -164,6 +164,7 @@ class TieFighter{
     }
     void update(time_t deltaTicks);
     void draw(Mesh *m);
+    void destroy();
 };
 
 std::vector<TieFighter> ties;
