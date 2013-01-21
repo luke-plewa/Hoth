@@ -135,15 +135,17 @@ static const float g_groundY = -1.51;      // y coordinate of the ground
 static const float g_groundSize = BOX_SIZE;   // half the ground length
 
 time_t delta_start, delta_end;
+int hitCount = 0;
 
 class TieFighter{
-  vec3 position;
   vec3 direction;
   vec3 color;
   float speed;
   int num;
 
   public:
+    vec3 position;
+
     void create(int n){
       position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 0.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
       direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
@@ -158,6 +160,7 @@ class TieFighter{
         color = vec3((float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX));
       }
       else{
+        hitCount++;
         direction = vec3(0, 0, 0);
         color = vec3(.01f, .01f, .01f);
       }
@@ -167,11 +170,29 @@ class TieFighter{
     void destroy();
 };
 
+//data structure for particle system
+class Particle{
+  vec3 position;
+  vec3 moveBy;
+  float Direction; //angle of rotation
+  float Acceleration; //how fast it accelerates upwards
+  float Deceleration; //how fast it decelerates downwards
+  float Scalez; //how much we wish to scale it
+  vec3 color; //color
+
+  public:
+    void create();
+    void update(time_t deltaTicks);
+    void draw(TieFighter tie);
+};
+
+//class objects
 std::vector<TieFighter> ties;
+std::vector<Particle> particles;
 
 /* projection matrix */
 void SetProjectionMatrix() {
-  glm::mat4 Projection = glm::perspective(80.0f, (float)g_width/g_height, 0.1f, 100.f);
+  glm::mat4 Projection = glm::perspective(80.0f, (float)g_width/g_height, 0.1f, 200.f);
   safe_glUniformMatrix4fv(h_uProjMatrix, glm::value_ptr(Projection));
 }
 
@@ -233,6 +254,78 @@ void TieFighter::update(time_t deltaTicks){
     position.z = -BOX_SIZE;
     collide(false);
   }
+}
+
+void Particle::create(){
+    position.x = 0; //set initial x
+    position.y = 0; //set initial y
+    position.z = 0; //set initial z
+
+    //randomly move on x-axis
+    moveBy.x = (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1) * 
+      rand()%11) + 1) * 0.005) - (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1
+        ) * rand()%11) + 1) * 0.005);
+
+    //randomly move on z-axis
+      moveBy.z = (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1) * 
+        rand()%11) + 1) * 0.005) - (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1
+          ) * rand()%11) + 1) * 0.005);
+
+    //randomly set color
+      color.x = ((float) rand()) / ((float) RAND_MAX);
+      color.y = ((float) rand()) / ((float) RAND_MAX);
+      color.z = ((float) rand()) / ((float) RAND_MAX);
+
+    Scalez = .25; //scale to 25%
+    Direction = 0; //initial rotation angle
+
+    Acceleration = (((((((8 - 5 + 2) * rand()%11) + 5
+    ) - 1 + 1) * rand()%11) + 1) * 0.02); //random acceleration
+    Deceleration = 0.25; //constant deceleration
+}
+
+void Particle::update(time_t deltaTicks){
+ //set y position
+  position.y += Acceleration;
+  Deceleration += 0.0025;
+
+  //move particle on x and y axis
+  position.x += moveBy.x;
+  position.z += moveBy.z;
+
+  //rotate particle
+  Direction += ((((((int)(0.5 - 0.1 + 0.1) 
+    * rand()%11) + 1) - 1 + 1) * rand()%11) + 1);
+}
+
+void Particle::draw(TieFighter tie){
+  Mesh* p = GeometryCreator::CreateSphere(glm::vec3(1.5f));
+  safe_glEnableVertexAttribArray(h_aPosition);
+  glBindBuffer(GL_ARRAY_BUFFER, p->PositionHandle);
+  safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  safe_glEnableVertexAttribArray(h_aNormal);
+  glBindBuffer(GL_ARRAY_BUFFER, p->NormalHandle);
+  safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p->IndexHandle);
+
+  if(position.y > -1){
+    ModelTrans.pushMatrix();
+      glUniform3f(h_aColor, color.x,color.y,color.z); //set color
+
+      //translate particle on axes
+      ModelTrans.translate(vec3(position.x + tie.position.x, 
+        position.y, position.z + tie.position.z));
+
+      //scale particle
+      ModelTrans.scale(Scalez);
+        
+      SetModel();
+      glDrawElements(GL_TRIANGLES, p->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+    ModelTrans.popMatrix();
+  }
+
+  safe_glDisableVertexAttribArray(h_aPosition);
+  safe_glDisableVertexAttribArray(h_aNormal);
 }
 
 static void initGround() {
@@ -426,6 +519,14 @@ void Initialize ()                  // Any GL Init Code
       tie_list[i].create(i);
       ties.push_back(tie_list[i]);
     }
+
+    //particles
+    Particle part_list[13];
+    for(int i = 0; i < 13; i++){
+      part_list[i].create();
+      particles.push_back(part_list[i]);
+    }
+
     time (&delta_start);
 }
 
@@ -477,6 +578,7 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aNormal);
   }
 
+  //draw spheres
     Mesh* m = GeometryCreator::CreateSphere(glm::vec3(1.5f));
     safe_glEnableVertexAttribArray(h_aPosition);
     glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
@@ -489,12 +591,19 @@ void Draw (void)
     time_t temp = difftime(delta_start, delta_end);
     for(int i=0; i < TieCount; i++){
       //linked list of ties, draw draw(m)
-      ties[i].update(temp);
       ties[i].draw(m);
     }
     time (&delta_start);
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
+
+    if(hitCount >= 10){
+      for(int i=0; i < TieCount; i++){
+        for(int j = 0; j < 13; j++){
+          particles[j].draw(ties[i]);
+        }
+      }
+    }
 
     //set up the texture unit
     glEnable(GL_TEXTURE_2D);
@@ -681,6 +790,9 @@ void Timer(int param)
     for(int i=0; i < TieCount; i++){
       ties[i].update(temp);
     }
+    for(int i = 0; i < 13; i++){
+      particles[i].update(temp);
+    }
     time (&delta_start);
 
     if(move){
@@ -708,7 +820,8 @@ void Timer(int param)
         laserLook.z+0.1f*laserProgress*(laserLook.z-laserStart.z)));
       if(laserProgress > 1100.0f){ fire = false; laserProgress = 0.0f; }
     }
-    glutTimerFunc(StepSize, Timer, 1);
+    if(hitCount <= 100)
+      glutTimerFunc(StepSize, Timer, 1);
     glutPostRedisplay();
 }
 
