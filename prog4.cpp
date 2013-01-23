@@ -4,7 +4,7 @@
 #include <OpenGL/glu.h>
 #endif
 #ifdef __unix__
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 #endif
 
 #include <stdlib.h>
@@ -282,8 +282,8 @@ void Particle::create(){
 
 void Particle::update(time_t deltaTicks){
  //set y position
-  position.y += Acceleration;
-  Deceleration += 0.0025;
+  position.y += Acceleration - Deceleration;
+  Deceleration += 0.025;
 
   //move particle on x and y axis
   position.x += moveBy.x;
@@ -310,7 +310,7 @@ void Particle::draw(TieFighter tie){
 
       //translate particle on axes
       ModelTrans.translate(vec3(position.x + tie.position.x, 
-        position.y, position.z + tie.position.z));
+        tie.position.y, position.z + tie.position.z));
 
       //scale particle
       ModelTrans.scale(Scalez);
@@ -524,6 +524,25 @@ void Initialize ()                  // Any GL Init Code
     time (&delta_start);
 }
 
+void displayScore(){
+  char scoreVal[10];
+  char hits[] = "Hits: ";
+
+  //set position
+  glRasterPos2f(-0.99f,0.95f);
+
+  //print "Hits: "
+  for(int i = 0; i < strlen(hits); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, hits[i]);
+  }
+
+  //print score
+  sprintf(scoreVal,"%d",hitCount);
+  for(int i = 0; i < strlen(scoreVal); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, scoreVal[i]);
+  }
+}
+
 /* Main display function */
 void Draw (void)
 {
@@ -532,6 +551,9 @@ void Draw (void)
   if (cube == 0) {
     //Start our shader
     glUseProgram(ShadeProg);
+
+    //text display
+    displayScore();
 
     //Set up matrix transforms
     SetProjectionMatrix();
@@ -591,7 +613,7 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    if(hitCount >= 10){
+    if(hitCount >= 5){
       for(int i=0; i < TieCount; i++){
         for(int j = 0; j < 13; j++){
           particles[j].draw(ties[i]);
