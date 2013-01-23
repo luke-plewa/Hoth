@@ -41,6 +41,7 @@ void main() {
   vec3 newNorm = normalize(vNormal);
 
   float dotProd = dot(newNorm, L);
+  //clamp dot prod for cool effects
   /*if(dotProd > 0.7){
     dotProd = 0.8;
   }

@@ -50,8 +50,8 @@ int ImageLoad(char *filename, Image *image);
 GLvoid LoadTexture(char* image_file, int tex_id);
 
 //mode to toggle drawing
-int cube, manipulate;
-float move;
+int cube;
+float move; // autorun
 
 //flag and ID to toggle on and off the shader
 int ShadeProg, Shade2;
@@ -59,10 +59,8 @@ int ShadeProg, Shade2;
 // mouse global variables
 float start_x = 0;
 float start_y = 0;
-float start_z = 0;
 float curr_x = 0;
 float curr_y = 0;
-float curr_z = 0;
 float delta_x = 0; //mouse change
 float delta_y = 0;
 float alpha, beta;
@@ -73,11 +71,6 @@ vec3 laserMove = vec3(0, -20, 0); // laser position
 float laserProgress = 0.0f; // step factor
 vec3 laserLook = vec3(0, 0, 0); // look vector of laser
 vec3 laserStart = vec3(0, 0, 0); // where the eye was
-float myExplode[80]; // timer of animation for collision
-float myMove = -100.0f; // goes from -100 to +100
-int myMoveDec = false; // direction of mymove
-int collides[80]; // collision detection on models
-int count = 0; // hit count
 
 int TieCount = 0; // must be less than 20
 
@@ -90,9 +83,7 @@ GLint h_uLight;
 GLint h_uView;
 GLint h_aColor;
 GLint h_aNormal;
-GLint h_options;
 
-GLint h_uLaser;
 GLint h_uTexUnit;
 GLint h_uTexUnit2;
 GLint h_aPosition;
@@ -102,6 +93,7 @@ GLuint uNormalMatrix;
 GLint h_uViewMatrix;
 GLint h_uProjMatrix;
 GLuint GrndBuffObj, GIndxBuffObj, GTexBuffObj, GroundNormalBuffObj, TexBuffObj;
+
 int g_CiboLen, g_GiboLen;
 static float  g_width, g_height;
 unsigned int const StepSize = 10;
@@ -134,7 +126,7 @@ static const float RADS_TO_DEGS = 180.0 / 4*atan((float)1.0); // Pi=3.14
 static const float g_groundY = -1.51;      // y coordinate of the ground
 static const float g_groundSize = BOX_SIZE;   // half the ground length
 
-time_t delta_start, delta_end;
+time_t delta_start, delta_end;  // for timer
 int hitCount = 0;
 
 class TieFighter{
@@ -201,9 +193,6 @@ void SetView() {
   glm::mat4 view = glm::lookAt(eye, look, up);
   safe_glUniformMatrix4fv(h_uViewMatrix, glm::value_ptr(view));
   glUniform4f(h_uView, eye.x, eye.y, eye.z, 0);
-  //light_x = eye.x;
-  //light_y = eye.y;
-  //light_z = eye.z;
   glUniform3f(h_uLight, light_x, light_y, light_z);
 }
 
@@ -468,9 +457,7 @@ int InstallShader(const GLchar *vShaderName, const GLchar *fShaderName) {
         h_aNormal = safe_glGetAttribLocation(ShadeProg, "aNormal"); 
         h_uView = safe_glGetUniformLocation(ShadeProg, "uView");
       h_uLight = safe_glGetUniformLocation(ShadeProg, "uLight");
-      h_options = safe_glGetUniformLocation(ShadeProg, "options");
     uNormalMatrix   = safe_glGetUniformLocation(ShadeProg, "uNormalMatrix");
-    h_uLaser   = safe_glGetUniformLocation(ShadeProg, "uLaser");
     h_aColor   = safe_glGetUniformLocation(ShadeProg, "aColor");
        printf("sucessfully installed shader %d\n", ShadeProg);
        return 1;
@@ -778,7 +765,7 @@ void ReshapeGL (int width, int height)
 void Timer(int param)
 {
     myRot += StepSize * 0.1f;
-    if (myRot >= 360.0f){ // handles cube rotation and tie fighter cycling
+    if (myRot >= 180.0f){ // handles cube rotation and tie fighter cycling
       myRot = 0.0f;
       if(TieCount < 10){
         TieCount++;
