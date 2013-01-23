@@ -56,7 +56,7 @@ void main() {
   float dotProd_g = uLightCol.y*dotProd;
   float dotProd_b = uLightCol.z*dotProd;
   //diffuse and ambient
-  vec3 newColor = vec3(texColor1.r*dotProd_r + texColor1.r*.1, texColor1.g*dotProd_g + texColor1.g*.1, texColor1.b*dotProd_b + texColor1.b*.1);
+  vec3 newColor = vec3(texColor1.r*dotProd_r + texColor1.r*.2, texColor1.g*dotProd_g + texColor1.g*.2, texColor1.b*dotProd_b + texColor1.b*.2);
 
   //now compute specular
   float R_x = 2.0*dotProd*newNorm.x - L.x;

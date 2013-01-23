@@ -102,7 +102,7 @@ float g_trans = 0;
 
 glm::vec3 up = vec3(0, 1, 0);
 glm::vec3 look = vec3(0, 0, 0);
-glm::vec3 eye = vec3(0.0);
+glm::vec3 eye = vec3(-20, 20, -20);
 glm::vec3 gaze = vec3(0, 0, 0);
 glm::vec3 strafe = vec3(0, 0, 0);
 
@@ -142,7 +142,7 @@ class TieFighter{
     void create(int n){
       position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 0.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
       direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
-      speed = (float) rand() / ((float) RAND_MAX) + 2;
+      speed = (float) rand() / ((float) RAND_MAX) + .05f;
       num = n;
       color = vec3(0.7, 0.3, 0.3);
       dead = false;
@@ -221,7 +221,7 @@ void TieFighter::draw(Mesh *m){
 void TieFighter::update(time_t deltaTicks){
   // move along direction by speed
   // check for collisions
-  position += direction*speed*.1f;
+  position += direction*speed;
   for(int i = 0; i < TieCount; i++){
     float temp_x = abs(position.x - ties[i].position.x);
     float temp_z = abs(position.z - ties[i].position.z);
@@ -772,7 +772,7 @@ void ReshapeGL (int width, int height)
 void Timer(int param)
 {
     myRot += StepSize * 0.1f;
-    if (myRot >= 180.0f){ // handles cube rotation and tie fighter cycling
+    if (myRot >= 200.0f){ //add a new object every 2s
       myRot = 0.0f;
       if(TieCount < 10){
         TieCount++;
@@ -816,7 +816,14 @@ void Timer(int param)
     }
     if(hitCount <= 100)
       glutTimerFunc(StepSize, Timer, 1);
-    glutPostRedisplay();
+}
+
+void DrawTimer(int param){
+  glutPostRedisplay();
+  glutTimerFunc(StepSize, DrawTimer, 1);
+  time(&delta_end);
+  time_t temp = difftime(delta_start, delta_end);
+  time (&delta_start);
 }
 
 int main(int argc, char** argv) {
@@ -834,7 +841,8 @@ int main(int argc, char** argv) {
   glutKeyboardFunc(keyboard);
   glutMouseFunc( mouse );
   glutMotionFunc( mouseMove );
-  glutTimerFunc(StepSize, Timer, 1);
+  glutTimerFunc(StepSize, Timer, 1);  // updates game state
+  glutTimerFunc(StepSize, DrawTimer, 1);  // updates frames
   
   cube = 0;
 
