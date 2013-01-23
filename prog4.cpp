@@ -106,9 +106,9 @@ glm::vec3 eye = vec3(0.0);
 glm::vec3 gaze = vec3(0, 0, 0);
 glm::vec3 strafe = vec3(0, 0, 0);
 
-float light_x = -10;
-float light_y = 50; //light location
-float light_z = 50;
+float light_x = 0;
+float light_y = 100; //light location
+float light_z = 0;
 float myRot = 0.0f;
 float shapeRot = -70.0f; //ship yaw
 float shipRot = 0.0f; //ship pitch
