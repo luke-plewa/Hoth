@@ -134,6 +134,7 @@ class TieFighter{
   vec3 color;
   float speed;
   int num;
+  bool dead;
 
   public:
     vec3 position;
@@ -144,17 +145,23 @@ class TieFighter{
       speed = (float) rand() / ((float) RAND_MAX) + 2;
       num = n;
       color = vec3(0.7, 0.3, 0.3);
+      dead = false;
     }
     void collide(bool playerHit){
       // gets ran if collided into
       if(!playerHit){
+        if(dead){
+          hitCount--;  // update hit count to reflect collisions
+          dead = false;
+        }
         direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) - 0.5);
         color = vec3((float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX), (float) rand() / ((float) RAND_MAX));
       }
-      else{
+      else if (playerHit && !dead){
         hitCount++;
         direction = vec3(0, 0, 0);
         color = vec3(.01f, .01f, .01f);
+        dead = true;
       }
     }
     void update(time_t deltaTicks);
