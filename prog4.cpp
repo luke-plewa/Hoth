@@ -637,8 +637,20 @@ void moveDiagonal(bool forward, bool right){
       else{ //left
         diag = normalize(gaze-strafe);
       }
-      eye += diag;
-      look += diag;
+      if(eye.y > 0){ //boundary checks
+        eye += diag;
+        look += diag;
+      }
+      else{
+        if(right){
+          eye += strafe;
+          look += strafe;
+        }
+        else{
+          eye -= strafe;
+          look -= strafe;
+        }
+      }
     }
     else{ //backward
       if(right){ //right
@@ -647,8 +659,20 @@ void moveDiagonal(bool forward, bool right){
       else{ //left
         diag = normalize(gaze+strafe);
       }
-      eye -= diag;
-      look -= diag;
+      if(eye.y > 0){ //boundary checks
+        eye -= diag;
+        look -= diag;
+      }
+      else{
+        if(right){
+          eye += strafe;
+          look += strafe;
+        }
+        else{
+          eye -= strafe;
+          look -= strafe;
+        }
+      }
     }
 }
 
