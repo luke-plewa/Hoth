@@ -174,6 +174,15 @@ class TieFighter{
 
 //data structure for particle system
 class Particle{
+  /*vec3 position;
+  vec3 moveBy;
+  float Direction; //angle of rotation
+  float Acceleration; //how fast it accelerates upwards
+  float Deceleration; //how fast it decelerates downwards
+  float Scalez; //how much we wish to scale it
+  vec3 color; //color*/
+
+  public:
   vec3 position;
   vec3 moveBy;
   float Direction; //angle of rotation
@@ -182,7 +191,6 @@ class Particle{
   float Scalez; //how much we wish to scale it
   vec3 color; //color
 
-  public:
     void create();
     void update(time_t deltaTicks);
     void draw(TieFighter tie);
@@ -275,7 +283,7 @@ void TieFighter::drawWings(Mesh *m){
 
 void Particle::create(){
     position.x = 0; //set initial x
-    position.y = 0; //set initial y
+    position.y = 1.5; //set initial y
     position.z = 0; //set initial z
 
     //randomly move on x-axis
@@ -293,18 +301,19 @@ void Particle::create(){
       color.y = ((float) rand()) / ((float) RAND_MAX);
       color.z = ((float) rand()) / ((float) RAND_MAX);
 
-    Scalez = .25; //scale to 25%
+    Scalez = 0.5; //scale to 25%
     Direction = 0; //initial rotation angle
 
-    Acceleration = (((((((8 - 5 + 2) * rand()%11) + 5
-    ) - 1 + 1) * rand()%11) + 1) * 0.02); //random acceleration
+    //Acceleration = (((((((8 - 5 + 2) * rand()%11) + 5
+    //) - 1 + 1) * rand()%11) + 1) * 0.02); //random acceleration
     Deceleration = 0.25; //constant deceleration
+    Acceleration = 0.1f;
 }
 
 void Particle::update(time_t deltaTicks){
  //set y position
-  position.y += Acceleration - Deceleration;
-  Deceleration += 0.025;
+  position.y += Acceleration;
+  Deceleration += 0.0025;
 
   //move particle on x and y axis
   position.x += moveBy.x;
@@ -327,11 +336,12 @@ void Particle::draw(TieFighter tie){
 
   if(position.y > -1){
     ModelTrans.pushMatrix();
-      glUniform3f(h_aColor, color.x,color.y,color.z); //set color
+      glUniform3f(h_aColor, 0.9f,0.1f,0.1f); //set color
 
       //translate particle on axes
-      ModelTrans.translate(vec3(position.x + tie.position.x, 
-        tie.position.y, position.z + tie.position.z));
+      //ModelTrans.translate(vec3(0, 25, 0));
+
+      printf("%lf %lf %lf\n",position.x, position.y, position.z);
 
       //scale particle
       ModelTrans.scale(Scalez);
