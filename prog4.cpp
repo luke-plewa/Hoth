@@ -74,6 +74,9 @@ vec3 laserStart = vec3(0, 0, 0); // where the eye was
 
 int TieCount = 0; // must be less than 20
 
+//keyboard globals
+int keyDown[256];
+
 static const float g_maxZ = 50.0f;   // game boundaries
 static const float g_minZ = -50.0f;
 static const float BOX_SIZE = 50.0f;
@@ -164,8 +167,6 @@ class TieFighter{
       }
       else if (playerHit && !dead){
         hitCount++;
-        printf("Hit Count: %d\n", hitCount);
-        //direction = vec3(0, 0, 0);
         color = vec3(.01f, .01f, .01f);
         dead = true;
       }
@@ -353,7 +354,7 @@ void Particle::draw(TieFighter tie){
       //translate particle on axes
       //ModelTrans.translate(vec3(0, 25, 0));
 
-      printf("%lf %lf %lf\n",position.x, position.y, position.z);
+      //printf("%lf %lf %lf\n",position.x, position.y, position.z);
 
       //scale particle
       ModelTrans.scale(Scalez);
@@ -550,25 +551,25 @@ void Initialize ()                  // Any GL Init Code
     //vertexCount = model.meshes()[0].makeVBO(NULL, &positions, &uvs, &normals);
 
 
-      // tie fighter
+      // create tie fighter
     TieFighter tie_list[10];
     for(int i = 0; i < 10; i++){
       tie_list[i].create(i);
       ties.push_back(tie_list[i]);
     }
 
-    //particles
-    Particle part_list[13];
+    // create particles
+    /*Particle part_list[13];
     for(int i = 0; i < 13; i++){
       part_list[i].create();
       particles.push_back(part_list[i]);
-    }
+    }*/
 
     time (&delta_start);
 }
 
-void displayScore(){
-  char scoreVal[10];
+void displayHUD(){
+  char dispVal[10];
   char hits[] = "Hits: ";
 
   //set position
@@ -580,9 +581,88 @@ void displayScore(){
   }
 
   //print score
-  sprintf(scoreVal,"%d",hitCount);
-  for(int i = 0; i < strlen(scoreVal); i++){
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, scoreVal[i]);
+  sprintf(dispVal,"%d",hitCount);
+  for(int i = 0; i < strlen(dispVal); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, dispVal[i]);
+  }
+
+  char objCount[] = "Object Count: "; //create next string
+  //set position
+  glRasterPos2f(-0.99f,0.90f);
+
+  //print "Object Count: "
+  for(int i = 0; i < strlen(objCount); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, objCount[i]);
+  }
+
+  //print number of objects spawned
+  sprintf(dispVal,"%d",TieCount);
+  for(int i = 0; i < strlen(dispVal); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, dispVal[i]);
+  } 
+
+  char frames[] = "FPS: "; //create next string
+  //set position
+  glRasterPos2f(-0.99f,0.85f);
+
+  //print "FPS: "
+  for(int i = 0; i < strlen(frames); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, frames[i]);
+  }
+
+  //print FPS
+  sprintf(dispVal,"%.0lf",fps);
+  for(int i = 0; i < strlen(dispVal); i++){
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, dispVal[i]);
+  }  
+}
+
+//if keyboard press is 'a'
+void strafeLeft(){
+    gaze = normalize(look - eye);
+    strafe = normalize(glm::cross(gaze,up));
+    eye -= strafe;
+    look -= strafe;
+}
+
+//if keyboard press is 'd'
+void strafeRight(){
+    gaze = normalize(look - eye);
+    strafe = normalize(glm::cross(gaze,up));
+    eye += strafe;
+    look += strafe;
+}
+
+//if keyboard press is 'w'
+void moveForward(){
+    gaze = normalize(look - eye);
+    eye += gaze;
+    look += gaze;
+}
+
+//if keyboard press is 's'
+void moveBackward(){
+    gaze = normalize(look - eye);
+    eye -= gaze;
+    look -= gaze;
+}
+
+char checkKeyPress(){
+  if(keyDown['a']){
+    strafeLeft();
+    return 'a';
+  }
+  if(keyDown['d']){
+    strafeRight();
+    return 'd';
+  }
+  if(keyDown['w']){
+    moveForward();
+    return 'w';
+  }
+  if(keyDown['s']){
+    moveBackward();
+    return 's';
   }
 }
 
@@ -596,7 +676,7 @@ void Draw (void)
     glUseProgram(ShadeProg);
 
     //text display
-    displayScore();
+    displayHUD();
 
     //Set up matrix transforms
     SetProjectionMatrix();
@@ -671,13 +751,14 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    if(hitCount >= 10){
+    //spawn particles when all enemies die
+    /*if(hitCount >= 10){
       for(int i=0; i < TieCount; i++){
         for(int j = 0; j < 13; j++){
           //particles[j].draw(ties[i]);
         }
       }
-    }
+    }*/
 
     //set up the texture unit
     glEnable(GL_TEXTURE_2D);
@@ -743,9 +824,9 @@ void mouse(int button, int state, int x, int y) {
 //the mouse move callback
 void mouseMove(int x, int y) {
   glutToPixel(x, y, false);
-  delta_x = curr_x - start_x;
+  delta_x = curr_x - start_x; //movement amounts
   delta_y = curr_y - start_y;
-  alpha += 1.57*delta_y/2;
+  alpha += 1.57*delta_y/2; //rotation angles
   beta += 3.14*delta_x/2;
   if (alpha > 70.0*3.14/180.0){  //boundaries on looking up/down
     alpha = 70.0*3.14/180.0;
@@ -773,37 +854,20 @@ void keyboard(unsigned char key, int x, int y ){
   switch( key ) {
     /* WASD keyes effect view/camera transform */
     case 'w':
-      gaze = look - eye;
-      eye += gaze;
-      if(eye.y < 0){
-        eye.y = 0;
+      if(eye.y > 0 || gaze.y >= 0){
+        keyDown[key] = 1;
       }
-      look = vec3(cos(alpha)*cos(beta), sin(alpha), cos(alpha)*cos(90-beta));
-      look += eye;
       break;
     case 's':
-      gaze = look - eye;
-      eye -= gaze;
-      if(eye.y < 0){
-        eye.y = 0;
+      if(eye.y > 0 || gaze.y <= 0){
+        keyDown[key] = 1;
       }
-      look = vec3(cos(alpha)*cos(beta), sin(alpha), cos(alpha)*cos(90-beta));
-      look += eye;
       break;
     case 'a':
-      //cross product between gaze and up
-      gaze = look - eye;
-      strafe = glm::cross(gaze, up);
-      eye -= strafe;
-      look = vec3(cos(alpha)*cos(beta), sin(alpha), cos(alpha)*cos(90-beta));
-      look += eye;
+      keyDown[key] = 1;
       break;
     case 'd':
-      gaze = look - eye;
-      strafe = glm::cross(gaze, up);
-      eye += strafe;
-      look = vec3(cos(alpha)*cos(beta), sin(alpha), cos(alpha)*cos(90-beta));
-      look += eye;
+      keyDown[key] = 1;
       break;
   case 'f': // shoot laser
     fire = 1;
@@ -841,6 +905,11 @@ void keyboard(unsigned char key, int x, int y ){
   glutPostRedisplay();
 }
 
+//if key is up, stop doing key action
+void keyboardUp(unsigned char key, int x, int y ){
+  keyDown[key] = 0;
+}
+
 /* Reshape */
 void ReshapeGL (int width, int height)
 {
@@ -851,12 +920,13 @@ void ReshapeGL (int width, int height)
 }
 void Timer(int param)
 {
+  checkKeyPress(); //see which way to move, if any
+
     myRot += StepSize * 0.1f;
     if (myRot >= 200.0f){ //add a new object every 2s
       myRot = 0.0f;
       if(TieCount < 10){
         TieCount++;
-        printf("TieCount: %d\n", TieCount);
       }
     }
 
@@ -917,7 +987,6 @@ void DrawTimer(int param){
     fps = frameCount / (timeInterval / 1000.f);
     previousTime = currentTime;
     frameCount = 0;
-    printf("FPS: %lf\n", fps);
   }
 }
 
@@ -934,6 +1003,7 @@ int main(int argc, char** argv) {
   glutDisplayFunc(Draw);
   glutReshapeFunc(ReshapeGL);
   glutKeyboardFunc(keyboard);
+  glutKeyboardUpFunc(keyboardUp);
   glutMouseFunc( mouse );
   glutMotionFunc( mouseMove );
   glutTimerFunc(StepSize, Timer, 1);  // updates game state
