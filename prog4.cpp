@@ -265,12 +265,12 @@ void TieFighter::update(time_t deltaTicks){
   for(int i = 0; i < TieCount; i++){
     float temp_x = abs(position.x - ties[i].position.x);
     float temp_z = abs(position.z - ties[i].position.z);
-    if(i != num && temp_x < 2.5f && temp_z < 2.5f){
+    if(i != num && temp_x < 2.f && temp_z < 2.f){
       collide(false);
     }
   }
   vec3 diff = abs(position - laserMove);
-  if(diff.x < 1.5f && diff.z < 1.5f && diff.y < 1.5f){
+  if(diff.x < 2.f && diff.z < 2.f && diff.y < 2.f){
     collide(true);
   }
   if(position.x > BOX_SIZE){
@@ -673,7 +673,7 @@ void Draw (void)
     if(hitCount >= 10){
       for(int i=0; i < TieCount; i++){
         for(int j = 0; j < 13; j++){
-          particles[j].draw(ties[i]);
+          //particles[j].draw(ties[i]);
         }
       }
     }
