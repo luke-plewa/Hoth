@@ -174,7 +174,6 @@ class TieFighter{
     void update(time_t deltaTicks);
     void draw(Mesh *m);
     void destroy();
-    void drawWings(Mesh *m);
 };
 
 //data structure for particle system
@@ -234,28 +233,6 @@ void TieFighter::draw(Mesh *m){
     ModelTrans.rotate(90, direction); // set upright
     SetModel();  
     glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-  ModelTrans.popMatrix();
-}
-
-void TieFighter::drawWings(Mesh *m){
-  ModelTrans.pushMatrix();
-    glUniform3f(h_aColor, color.x, color.y, color.z);
-    ModelTrans.translate(vec3(position.x, position.y, position.z));
-    ModelTrans.scale(2.f);
-    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
-    ModelTrans.translate(vec3(0, 0, 0.75f));
-    ModelTrans.rotate(90, direction);
-    SetModel();  
-    //glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-  ModelTrans.popMatrix();
-  ModelTrans.pushMatrix();
-    ModelTrans.translate(vec3(position.x, position.y, position.z));
-    ModelTrans.scale(2.f);
-    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
-    ModelTrans.translate(vec3(0, 0, -0.75f));
-    ModelTrans.rotate(90, direction);
-    SetModel();  
-    //glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
   ModelTrans.popMatrix();
 }
 
@@ -718,20 +695,6 @@ void Draw (void)
   }
 
   //draw ties
-    Mesh* w = GeometryCreator::CreateDisc(0.1f, 1.f, 0.f, 8, 0);
-    safe_glEnableVertexAttribArray(h_aPosition);
-    glBindBuffer(GL_ARRAY_BUFFER, w->PositionHandle);
-    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    safe_glEnableVertexAttribArray(h_aNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, w->NormalHandle);
-    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, w->IndexHandle);
-    for(int i=0; i < TieCount; i++){
-      //linked list of ties, draw draw(m)
-      ties[i].drawWings(w);
-    }
-    safe_glDisableVertexAttribArray(h_aPosition);
-    safe_glDisableVertexAttribArray(h_aNormal);
 
     Mesh* m = GeometryCreator::CreateCube();
     safe_glEnableVertexAttribArray(h_aPosition);
