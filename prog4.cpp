@@ -170,6 +170,7 @@ class TieFighter{
         hitCount++;
         color = vec3(.01f, .01f, .01f);
         dead = true;
+        printf("Hit: %d\n", hitCount);
       }
     }
     void update(float deltaTicks);
@@ -215,7 +216,7 @@ void TieFighter::draw(Mesh *m){
 void TieFighter::update(float deltaTicks){
   // move along direction by speed
   // check for collisions
-  //speed *= deltaTicks;
+  speed = deltaTicks/60.f;
   if(!dead)
     position += direction*speed;
   for(int i = 0; i < TieCount; i++){
@@ -681,15 +682,6 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    //spawn particles when all enemies die
-    /*if(hitCount >= 10){
-      for(int i=0; i < TieCount; i++){
-        for(int j = 0; j < 13; j++){
-          //particles[j].draw(ties[i]);
-        }
-      }
-    }*/
-
     //set up the texture unit
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -868,6 +860,7 @@ void Timer(int param)
       myRot = 0.0f;
       if(TieCount < 10){
         TieCount++;
+        printf("Tie Count: %d\n", TieCount);
       }
     }
 
@@ -877,7 +870,7 @@ void Timer(int param)
 
     //update ties
     for(int i=0; i < TieCount; i++){
-      ties[i].update(temp);
+      ties[i].update(fps);
     }
     time (&delta_start);
 
@@ -921,6 +914,7 @@ void DrawTimer(int param){
   glutTimerFunc(StepSize, DrawTimer, 1);
 
   // calc fps
+  // mycodelog.com tutorial to calc fps every 1s
   frameCount++;
   currentTime = glutGet(GLUT_ELAPSED_TIME);
   int timeInterval = currentTime - previousTime;
@@ -928,6 +922,7 @@ void DrawTimer(int param){
     fps = frameCount / (timeInterval / 1000.f);
     previousTime = currentTime;
     frameCount = 0;
+    printf("FPS: %lf\n", fps);
   }
 }
 
