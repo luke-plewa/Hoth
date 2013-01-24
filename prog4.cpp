@@ -517,9 +517,11 @@ void moveForward(){
 
 //if keyboard press is 's'
 void moveBackward(){
+  if(eye.y > -0.6f){
     gaze = normalize(look - eye);
     eye -= gaze;
     look -= gaze;
+  }
 }
 
 //if keyboard press is two keys
