@@ -150,7 +150,7 @@ class TieFighter{
     void create(int n){
       position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 0.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
       direction = vec3((float) rand() / ((float) RAND_MAX) - 0.5, 0.0, (float) rand() / ((float) RAND_MAX) -0.5);
-      speed = (float) rand() / ((float) RAND_MAX) + .05f;
+      speed = (float) rand() / ((float) RAND_MAX) + .5f;
       num = n;
       color = vec3(0.7, 0.3, 0.3);
       dead = false;
@@ -172,7 +172,7 @@ class TieFighter{
         dead = true;
       }
     }
-    void update(time_t deltaTicks);
+    void update(float deltaTicks);
     void draw(Mesh *m);
     void destroy();
 };
@@ -212,9 +212,10 @@ void TieFighter::draw(Mesh *m){
   ModelTrans.popMatrix();
 }
 
-void TieFighter::update(time_t deltaTicks){
+void TieFighter::update(float deltaTicks){
   // move along direction by speed
   // check for collisions
+  //speed *= deltaTicks;
   if(!dead)
     position += direction*speed;
   for(int i = 0; i < TieCount; i++){
@@ -507,9 +508,11 @@ void strafeRight(){
 
 //if keyboard press is 'w'
 void moveForward(){
+  if(eye.y > -0.6f){
     gaze = normalize(look - eye);
     eye += gaze;
     look += gaze;
+  }
 }
 
 //if keyboard press is 's'
@@ -851,8 +854,10 @@ void ReshapeGL (int width, int height)
 }
 void Timer(int param)
 {
-  if(eye.y < -0.6f){
+  if(eye.y < -0.5f){
     eye.y += 0.1f;
+    gaze = normalize(look - eye);
+    look += gaze;
   }
   checkKeyPress(); //see which way to move, if any
 
@@ -866,17 +871,12 @@ void Timer(int param)
 
     //update time
     time(&delta_end);
-    time_t temp = difftime(delta_start, delta_end);
+    float temp = difftime(delta_start, delta_end);
 
     //update ties
     for(int i=0; i < TieCount; i++){
       ties[i].update(temp);
     }
-
-    //update particles
-    /*for(int i = 0; i < 13; i++){
-      particles[i].update(temp);
-    }*/
     time (&delta_start);
 
     if(move){
