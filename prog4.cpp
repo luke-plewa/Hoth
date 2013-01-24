@@ -135,6 +135,7 @@ class TieFighter{
   float speed;
   int num;
   bool dead;
+  float orientation;
 
   public:
     vec3 position;
@@ -146,6 +147,7 @@ class TieFighter{
       num = n;
       color = vec3(0.7, 0.3, 0.3);
       dead = false;
+      orientation = 0;
     }
     void collide(bool playerHit){
       // gets ran if collided into
@@ -167,6 +169,7 @@ class TieFighter{
     void update(time_t deltaTicks);
     void draw(Mesh *m);
     void destroy();
+    void drawWings(Mesh *m);
 };
 
 //data structure for particle system
@@ -250,6 +253,24 @@ void TieFighter::update(time_t deltaTicks){
     position.z = -BOX_SIZE;
     collide(false);
   }
+}
+
+void TieFighter::drawWings(Mesh *m){
+  ModelTrans.pushMatrix();
+    glUniform3f(h_aColor, color.x, color.y, color.z);
+    ModelTrans.translate(vec3(position.x+1.5f, position.y, position.z));
+    ModelTrans.scale(2.f);
+    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
+    SetModel();  
+    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+  ModelTrans.popMatrix();
+  ModelTrans.pushMatrix();
+    ModelTrans.translate(vec3(position.x-1.5f, position.y, position.z));
+    ModelTrans.scale(2.f);
+    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
+    SetModel();  
+    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+  ModelTrans.popMatrix();
 }
 
 void Particle::create(){
@@ -594,7 +615,22 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aNormal);
   }
 
-  //draw spheres
+  //draw ties
+    Mesh* w = GeometryCreator::CreateDisc(0.1f, 1.f, 0.f, 8, 0);
+    safe_glEnableVertexAttribArray(h_aPosition);
+    glBindBuffer(GL_ARRAY_BUFFER, w->PositionHandle);
+    safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    safe_glEnableVertexAttribArray(h_aNormal);
+    glBindBuffer(GL_ARRAY_BUFFER, w->NormalHandle);
+    safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, w->IndexHandle);
+    for(int i=0; i < TieCount; i++){
+      //linked list of ties, draw draw(m)
+      ties[i].drawWings(w);
+    }
+    safe_glDisableVertexAttribArray(h_aPosition);
+    safe_glDisableVertexAttribArray(h_aNormal);
+
     Mesh* m = GeometryCreator::CreateSphere(glm::vec3(1.5f));
     safe_glEnableVertexAttribArray(h_aPosition);
     glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
@@ -613,7 +649,7 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    if(hitCount >= 5){
+    if(hitCount >= 10){
       for(int i=0; i < TieCount; i++){
         for(int j = 0; j < 13; j++){
           particles[j].draw(ties[i]);
