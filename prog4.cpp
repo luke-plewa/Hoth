@@ -164,6 +164,7 @@ class TieFighter{
       }
       else if (playerHit && !dead){
         hitCount++;
+        printf("Hit Count: %d\n", hitCount);
         //direction = vec3(0, 0, 0);
         color = vec3(.01f, .01f, .01f);
         dead = true;
@@ -855,6 +856,7 @@ void Timer(int param)
       myRot = 0.0f;
       if(TieCount < 10){
         TieCount++;
+        printf("TieCount: %d\n", TieCount);
       }
     }
 
@@ -915,6 +917,7 @@ void DrawTimer(int param){
     fps = frameCount / (timeInterval / 1000.f);
     previousTime = currentTime;
     frameCount = 0;
+    printf("FPS: %lf\n", fps);
   }
 }
 
