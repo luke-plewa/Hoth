@@ -108,6 +108,7 @@ glm::vec3 look = vec3(0, 0, 0);
 glm::vec3 eye = vec3(-20, 20, -20);
 glm::vec3 gaze = vec3(0, 0, 0);
 glm::vec3 strafe = vec3(0, 0, 0);
+glm::vec3 diag = vec3(0, 0, 0);
 
 float light_x = 0;
 float light_y = 100; //light location
@@ -624,22 +625,65 @@ void moveBackward(){
     look -= gaze;
 }
 
+//if keyboard press is two keys
+void moveDiagonal(bool forward, bool right){
+    gaze = normalize(look - eye);
+    strafe = normalize(glm::cross(gaze,up));
+
+    if(forward){ //forward
+      if(right){ //right
+        diag = normalize(gaze+strafe);
+      }
+      else{ //left
+        diag = normalize(gaze-strafe);
+      }
+      eye += diag;
+      look += diag;
+    }
+    else{ //backward
+      if(right){ //right
+        diag = normalize(gaze-strafe);
+      }
+      else{ //left
+        diag = normalize(gaze+strafe);
+      }
+      eye -= diag;
+      look -= diag;
+    }
+}
+
 char checkKeyPress(){
-  if(keyDown['a']){
+  if(keyDown['a'] && !(keyDown['w'] || keyDown['s'])){
     strafeLeft();
     return 'a';
   }
-  if(keyDown['d']){
+  if(keyDown['d'] && !(keyDown['w'] || keyDown['s'])){
     strafeRight();
     return 'd';
   }
-  if(keyDown['w']){
+  if(keyDown['w'] && !(keyDown['a'] || keyDown['d'])){
     moveForward();
     return 'w';
   }
-  if(keyDown['s']){
+  if(keyDown['s'] && !(keyDown['a'] || keyDown['d'])){
     moveBackward();
     return 's';
+  }
+  if(keyDown['s'] && (keyDown['a'] || keyDown['d'])){
+    if(keyDown['a']){
+      moveDiagonal(false,false);
+    }
+    else if(keyDown['d']){
+      moveDiagonal(false,true);
+    }
+  }
+  if(keyDown['w'] && (keyDown['a'] || keyDown['d'])){
+    if(keyDown['a']){
+      moveDiagonal(true,false);
+    }
+    else if(keyDown['d']){
+      moveDiagonal(true,true);
+    }
   }
 }
 
@@ -893,14 +937,19 @@ void Timer(int param)
       }
     }
 
+    //update time
     time(&delta_end);
     time_t temp = difftime(delta_start, delta_end);
+
+    //update ties
     for(int i=0; i < TieCount; i++){
       ties[i].update(temp);
     }
-    for(int i = 0; i < 13; i++){
+
+    //update particles
+    /*for(int i = 0; i < 13; i++){
       particles[i].update(temp);
-    }
+    }*/
     time (&delta_start);
 
     if(move){
