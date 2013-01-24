@@ -164,7 +164,7 @@ class TieFighter{
       }
       else if (playerHit && !dead){
         hitCount++;
-        direction = vec3(0, 0, 0);
+        //direction = vec3(0, 0, 0);
         color = vec3(.01f, .01f, .01f);
         dead = true;
       }
@@ -260,7 +260,8 @@ void TieFighter::drawWings(Mesh *m){
 void TieFighter::update(time_t deltaTicks){
   // move along direction by speed
   // check for collisions
-  position += direction*speed;
+  if(!dead)
+    position += direction*speed;
   for(int i = 0; i < TieCount; i++){
     float temp_x = abs(position.x - ties[i].position.x);
     float temp_z = abs(position.z - ties[i].position.z);
