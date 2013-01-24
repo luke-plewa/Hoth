@@ -138,14 +138,14 @@ float currentTime, previousTime;
 
 class TieFighter{
   vec3 direction;
-  vec3 color;
   float speed;
   int num;
-  bool dead;
   float orientation;
 
   public:
     vec3 position;
+    bool dead;
+    vec3 color;
 
     void create(int n){
       position = vec3((float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2, 0.0, (float) rand() / ((float) RAND_MAX) * BOX_SIZE - BOX_SIZE/2);
@@ -177,33 +177,8 @@ class TieFighter{
     void destroy();
 };
 
-//data structure for particle system
-class Particle{
-  /*vec3 position;
-  vec3 moveBy;
-  float Direction; //angle of rotation
-  float Acceleration; //how fast it accelerates upwards
-  float Deceleration; //how fast it decelerates downwards
-  float Scalez; //how much we wish to scale it
-  vec3 color; //color*/
-
-  public:
-  vec3 position;
-  vec3 moveBy;
-  float Direction; //angle of rotation
-  float Acceleration; //how fast it accelerates upwards
-  float Deceleration; //how fast it decelerates downwards
-  float Scalez; //how much we wish to scale it
-  vec3 color; //color
-
-    void create();
-    void update(time_t deltaTicks);
-    void draw(TieFighter tie);
-};
-
 //class objects
 std::vector<TieFighter> ties;
-std::vector<Particle> particles;
 
 /* projection matrix */
 void SetProjectionMatrix() {
@@ -270,80 +245,6 @@ void TieFighter::update(time_t deltaTicks){
     position.z = -BOX_SIZE;
     collide(false);
   }
-}
-
-void Particle::create(){
-    position.x = 0; //set initial x
-    position.y = 1.5; //set initial y
-    position.z = 0; //set initial z
-
-    //randomly move on x-axis
-    moveBy.x = (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1) * 
-      rand()%11) + 1) * 0.005) - (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1
-        ) * rand()%11) + 1) * 0.005);
-
-    //randomly move on z-axis
-      moveBy.z = (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1) * 
-        rand()%11) + 1) * 0.005) - (((((((2 - 1 + 1) * rand()%11) + 1) - 1 + 1
-          ) * rand()%11) + 1) * 0.005);
-
-    //randomly set color
-      color.x = ((float) rand()) / ((float) RAND_MAX);
-      color.y = ((float) rand()) / ((float) RAND_MAX);
-      color.z = ((float) rand()) / ((float) RAND_MAX);
-
-    Scalez = 0.5; //scale to 25%
-    Direction = 0; //initial rotation angle
-
-    //Acceleration = (((((((8 - 5 + 2) * rand()%11) + 5
-    //) - 1 + 1) * rand()%11) + 1) * 0.02); //random acceleration
-    Deceleration = 0.25; //constant deceleration
-    Acceleration = 0.1f;
-}
-
-void Particle::update(time_t deltaTicks){
- //set y position
-  position.y += Acceleration;
-  Deceleration += 0.0025;
-
-  //move particle on x and y axis
-  position.x += moveBy.x;
-  position.z += moveBy.z;
-
-  //rotate particle
-  Direction += ((((((int)(0.5 - 0.1 + 0.1) 
-    * rand()%11) + 1) - 1 + 1) * rand()%11) + 1);
-}
-
-void Particle::draw(TieFighter tie){
-  Mesh* p = GeometryCreator::CreateSphere(glm::vec3(1.5f));
-  safe_glEnableVertexAttribArray(h_aPosition);
-  glBindBuffer(GL_ARRAY_BUFFER, p->PositionHandle);
-  safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  safe_glEnableVertexAttribArray(h_aNormal);
-  glBindBuffer(GL_ARRAY_BUFFER, p->NormalHandle);
-  safe_glVertexAttribPointer(h_aNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p->IndexHandle);
-
-  if(position.y > -1){
-    ModelTrans.pushMatrix();
-      glUniform3f(h_aColor, 0.9f,0.1f,0.1f); //set color
-
-      //translate particle on axes
-      //ModelTrans.translate(vec3(0, 25, 0));
-
-      //printf("%lf %lf %lf\n",position.x, position.y, position.z);
-
-      //scale particle
-      ModelTrans.scale(Scalez);
-        
-      SetModel();
-      glDrawElements(GL_TRIANGLES, p->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-    ModelTrans.popMatrix();
-  }
-
-  safe_glDisableVertexAttribArray(h_aPosition);
-  safe_glDisableVertexAttribArray(h_aNormal);
 }
 
 static void initGround() {
@@ -535,13 +436,6 @@ void Initialize ()                  // Any GL Init Code
       tie_list[i].create(i);
       ties.push_back(tie_list[i]);
     }
-
-    // create particles
-    /*Particle part_list[13];
-    for(int i = 0; i < 13; i++){
-      part_list[i].create();
-      particles.push_back(part_list[i]);
-    }*/
 
     time (&delta_start);
 }
@@ -929,6 +823,12 @@ void keyboard(unsigned char key, int x, int y ){
     look += eye;
     myRot = 0.0f;
     break;
+  case 'R': //reset
+    for(int i = 0; i < 10; i++){
+      ties[i].dead = false;
+      ties[i].color = vec3(0.7, 0.3, 0.3);
+    }
+    break;
  case 'q': case 'Q' :
     exit( EXIT_SUCCESS );
     break;
@@ -951,6 +851,9 @@ void ReshapeGL (int width, int height)
 }
 void Timer(int param)
 {
+  if(eye.y < -0.6f){
+    eye.y += 0.1f;
+  }
   checkKeyPress(); //see which way to move, if any
 
     myRot += StepSize * 0.1f;
