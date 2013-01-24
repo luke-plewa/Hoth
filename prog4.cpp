@@ -128,6 +128,9 @@ static const float g_groundSize = BOX_SIZE;   // half the ground length
 
 time_t delta_start, delta_end;  // for timer
 int hitCount = 0;
+float fps;
+int frameCount;
+float currentTime, previousTime;
 
 class TieFighter{
   vec3 direction;
@@ -221,11 +224,36 @@ void SetModel() {
 }
 
 void TieFighter::draw(Mesh *m){
+  orientation = dot(vec3(0,1,0), direction);
   ModelTrans.pushMatrix();
     glUniform3f(h_aColor, color.x, color.y, color.z);
     ModelTrans.translate(vec3(position.x, position.y, position.z));
+    ModelTrans.scale(2.5f);
+    ModelTrans.rotate(90, direction); // set upright
     SetModel();  
     glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+  ModelTrans.popMatrix();
+}
+
+void TieFighter::drawWings(Mesh *m){
+  ModelTrans.pushMatrix();
+    glUniform3f(h_aColor, color.x, color.y, color.z);
+    ModelTrans.translate(vec3(position.x, position.y, position.z));
+    ModelTrans.scale(2.f);
+    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
+    ModelTrans.translate(vec3(0, 0, 0.75f));
+    ModelTrans.rotate(90, direction);
+    SetModel();  
+    //glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
+  ModelTrans.popMatrix();
+  ModelTrans.pushMatrix();
+    ModelTrans.translate(vec3(position.x, position.y, position.z));
+    ModelTrans.scale(2.f);
+    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
+    ModelTrans.translate(vec3(0, 0, -0.75f));
+    ModelTrans.rotate(90, direction);
+    SetModel();  
+    //glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
   ModelTrans.popMatrix();
 }
 
@@ -261,24 +289,6 @@ void TieFighter::update(time_t deltaTicks){
     position.z = -BOX_SIZE;
     collide(false);
   }
-}
-
-void TieFighter::drawWings(Mesh *m){
-  ModelTrans.pushMatrix();
-    glUniform3f(h_aColor, color.x, color.y, color.z);
-    ModelTrans.translate(vec3(position.x+1.5f, position.y, position.z));
-    ModelTrans.scale(2.f);
-    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
-    SetModel();  
-    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-  ModelTrans.popMatrix();
-  ModelTrans.pushMatrix();
-    ModelTrans.translate(vec3(position.x-1.5f, position.y, position.z));
-    ModelTrans.scale(2.f);
-    ModelTrans.rotate(90.f, vec3(0,1,0)); // set upright
-    SetModel();  
-    glDrawElements(GL_TRIANGLES, m->IndexBufferLength, GL_UNSIGNED_SHORT, 0);
-  ModelTrans.popMatrix();
 }
 
 void Particle::create(){
@@ -641,7 +651,7 @@ void Draw (void)
     safe_glDisableVertexAttribArray(h_aPosition);
     safe_glDisableVertexAttribArray(h_aNormal);
 
-    Mesh* m = GeometryCreator::CreateSphere(glm::vec3(1.5f));
+    Mesh* m = GeometryCreator::CreateCube();
     safe_glEnableVertexAttribArray(h_aPosition);
     glBindBuffer(GL_ARRAY_BUFFER, m->PositionHandle);
     safe_glVertexAttribPointer(h_aPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -872,6 +882,12 @@ void Timer(int param)
       else{
         eye.z += 0.2f;
       }
+      if (eye.x > g_maxZ){
+        eye.x -= 0.2f;
+      }
+      else if (eye.x < g_minZ){
+        eye.x += 0.2f;
+      }
       look = vec3(cos(alpha)*cos(beta), sin(alpha), cos(alpha)*cos(90-beta));
       look += eye;
     }
@@ -889,9 +905,16 @@ void Timer(int param)
 void DrawTimer(int param){
   glutPostRedisplay();
   glutTimerFunc(StepSize, DrawTimer, 1);
-  time(&delta_end);
-  time_t temp = difftime(delta_start, delta_end);
-  time (&delta_start);
+
+  // calc fps
+  frameCount++;
+  currentTime = glutGet(GLUT_ELAPSED_TIME);
+  int timeInterval = currentTime - previousTime;
+  if(timeInterval > 1000){
+    fps = frameCount / (timeInterval / 1000.f);
+    previousTime = currentTime;
+    frameCount = 0;
+  }
 }
 
 int main(int argc, char** argv) {
