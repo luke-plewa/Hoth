@@ -637,7 +637,7 @@ void moveDiagonal(bool forward, bool right){
       else{ //left
         diag = normalize(gaze-strafe);
       }
-      if(eye.y > 0){ //boundary checks
+      if(eye.y > -0.6 || gaze.y >= 0){ //boundary checks
         eye += diag;
         look += diag;
       }
@@ -659,7 +659,7 @@ void moveDiagonal(bool forward, bool right){
       else{ //left
         diag = normalize(gaze+strafe);
       }
-      if(eye.y > 0){ //boundary checks
+      if(eye.y > -0.6 || gaze.y <= 0){ //boundary checks
         eye -= diag;
         look -= diag;
       }
@@ -885,12 +885,12 @@ void keyboard(unsigned char key, int x, int y ){
   switch( key ) {
     /* WASD keyes effect view/camera transform */
     case 'w':
-      if(eye.y > 0 || gaze.y >= 0){
+      if(eye.y > -0.6 || gaze.y >= 0){
         keyDown[key] = 1;
       }
       break;
     case 's':
-      if(eye.y > 0 || gaze.y <= 0){
+      if(eye.y > -0.6 || gaze.y <= 0){
         keyDown[key] = 1;
       }
       break;

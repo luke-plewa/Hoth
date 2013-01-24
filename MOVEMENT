@@ -1,0 +1,3 @@
+-if you're on the ground plane, looking along it, sometimes you can't use W. need to use S instead, sometimes lets the camera violate boundaries.
+
+-not related to movement, but the camera has been messed up since i first pulled it this morning. the initial camera positon is changed depending on the first action performed (mouse movement or keyboard). i'm not sure this is the desired behavior?
